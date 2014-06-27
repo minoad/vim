@@ -1,0 +1,62 @@
+class Server(object):
+    def __init__(self, address):
+        from socket import gethostbyaddr, setdefaulttimeout, socket
+        try:
+            self._servername=(gethostbyaddr(address))[0]
+            self_serverip=(gethostbyaddr(address))[-1]
+            self.manage_port=list()
+            self.manage_scan()
+            self._username = r'neo\\security_scan'
+            self._password = r'BeGentle8.9986'
+            self.uptime = 0
+        except:
+            print('Error setting IP')
+        self.get_uptime()
+
+    def manage_scan(self):
+        from socket import setdefaulttimeout, socket, AF_INET, SOCK_STREAM
+        setdefaulttimeout(1)
+        for i in [22,3389]:
+#            print(self._servername, i)
+            try:
+                connSkt=socket(AF_INET,SOCK_STREAM)
+                connSkt.connect((self._servername,i))
+                connSkt.send('Neohapsis Test scan\r\n')
+                results=connSkt.recv(60)
+                connSkt.close()
+                if str(results):
+                    self.manage_port.append(i)
+                else:
+                    pass
+            except:
+                pass
+
+    def __executessh(self, command):
+        from pxssh import pxssh
+        try:
+            s=pxssh()
+            s.login(self._servername,self._username,self._password)
+            s.sendline(command)
+            s.prompt()
+            if s.before:
+                #print(s.before)
+                #self.uptime=s.before
+                result = s.before
+            s.logout()
+            return(result)
+        except:
+            pass
+            print('Login failed for %s'%self._servername)
+
+    def get_uptime(self):
+        if self.uptime == 0:
+            self.uptime=self.__executessh('uptime')
+        return(self.uptime)
+    def get_data_utilization(self):
+        return(self.__executessh('df -h'))
+
+
+n = Server('10.9.101.13')
+print(n.manage_port)
+print(n.uptime)
+print(n.get_data_utilization())
